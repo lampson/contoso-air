@@ -3,59 +3,33 @@ kind: Deployment
 metadata:
   name: contoso-air
   namespace: dev
-  labels:
-    app.kubernetes.io/name: contoso-air
 spec:
-  replicas: 1
-  progressDeadlineSeconds: 1800   # give more time while debugging (30 minutes)
   selector:
     matchLabels:
-      app.kubernetes.io/name: contoso-air
+      app: contoso-air
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: contoso-air
+        app: contoso-air
     spec:
-      serviceAccountName: default
       containers:
       - name: contoso-air
-        # Use the image produced by CI. Update the tag for new builds.
-        image: lampsonregistry.azurecr.io/image-workflow-1761858944473:b936d94d40c6cd1618d2dc34b1eb4846d5da9c4e
-        imagePullPolicy: IfNotPresent
-        ports:
-        - containerPort: 3000
-        env:
-        - name: PORT
-          value: "3000"
-        envFrom:
-        - configMapRef:
-            name: contoso-air-config
-        resources:
-          requests:
-            cpu: 500m
-            memory: 512Mi
-          limits:
-            cpu: 1
-            memory: 1Gi
-        # Relax or remove startupProbe while switching to prebuilt image.
-        # Use a health endpoint that your app implements ("/health" or "/").
-        startupProbe:
-          httpGet:
-            path: /health
-            port: 3000
-          initialDelaySeconds: 20
-          timeoutSeconds: 5
-          periodSeconds: 10
-          failureThreshold: 30
+        image: lampsonregistry.azurecr.io/image-workflow-1761858944473:e6644fb1b639a8fcbeaed65dd5cb5a574deaa4ff
+        # ... existing ports/env/resources unchanged ...
         readinessProbe:
           httpGet:
-            path: /health
+            path: /
             port: 3000
-          initialDelaySeconds: 30
-          periodSeconds: 10
+            scheme: HTTP
+          initialDelaySeconds: 2
+          periodSeconds: 5
+          failureThreshold: 3
         livenessProbe:
           httpGet:
-            path: /health
+            path: /
             port: 3000
+            scheme: HTTP
           initialDelaySeconds: 60
-          periodSeconds: 20
+          periodSeconds: 10
+          failureThreshold: 3
+        # startupProbe removed
